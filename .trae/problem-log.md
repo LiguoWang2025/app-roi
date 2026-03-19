@@ -88,3 +88,24 @@ If `outline-ring/50` is a custom class, make sure it is defined within a `@layer
   }
 }
 ```
+
+---
+
+## [2026-03-19] shadcn Select 和 RadioGroup 组件类型错误
+
+### Issue
+使用 shadcn 的 Select 和 RadioGroup 组件时，TypeScript 类型检查报错：
+```
+Namespace 'RadioGroup' has no exported member 'Root'
+Property 'Radio' does not exist on type '<Value>(props: Props<Value>) => Element'
+Generic type 'Props' requires between 1 and 2 type arguments
+```
+
+### Cause
+当前使用的 shadcn/ui 版本与 @base-ui/react 的 API 不兼容，组件导入和类型定义不匹配。
+
+### Solution
+直接使用原生 HTML 元素实现下拉选择和单选功能：
+- 使用 `<select>` 代替 shadcn Select
+- 使用 `<input type="radio">` 代替 shadcn RadioGroup
+- 保持 shadcn 的样式类，但使用原生元素实现交互

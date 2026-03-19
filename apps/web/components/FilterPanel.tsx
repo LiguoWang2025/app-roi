@@ -4,18 +4,19 @@ import { useCallback } from "react";
 import {
   APP_IDS,
   COUNTRIES,
-  ROI_PERIODS,
+  BID_TYPES,
+  CHANNELS,
+  DISPLAY_MODES,
+  Y_SCALES,
   type FilterState,
   type AppId,
   type Country,
-  type RoiPeriod,
+  type BidType,
+  type Channel,
+  type DisplayMode,
+  type YScale,
 } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 
 interface FilterPanelProps {
@@ -24,51 +25,48 @@ interface FilterPanelProps {
 }
 
 export function FilterPanel({ value, onChange }: FilterPanelProps) {
-  const handleAppToggle = useCallback(
-    (appId: AppId) => {
-      const newAppIds = value.appIds.includes(appId)
-        ? value.appIds.filter((id) => id !== appId)
-        : [...value.appIds, appId];
+  const handleAppChange = useCallback(
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      const appId = e.target.value;
+      const newAppIds = appId ? [appId as AppId] : [];
       onChange({ ...value, appIds: newAppIds });
     },
     [value, onChange],
   );
 
-  const handleSelectAllApps = useCallback(() => {
-    onChange({ ...value, appIds: [...APP_IDS] });
-  }, [value, onChange]);
-
-  const handleClearApps = useCallback(() => {
-    onChange({ ...value, appIds: [] });
-  }, [value, onChange]);
-
-  const handleCountryToggle = useCallback(
-    (country: Country) => {
-      const newCountries = value.countries.includes(country)
-        ? value.countries.filter((c) => c !== country)
-        : [...value.countries, country];
+  const handleCountryChange = useCallback(
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      const country = e.target.value;
+      const newCountries = country ? [country as Country] : [];
       onChange({ ...value, countries: newCountries });
     },
     [value, onChange],
   );
 
-  const handleRoiPeriodChange = useCallback(
-    (period: string) => {
-      onChange({ ...value, roiPeriod: period as RoiPeriod });
+  const handleBidTypeChange = useCallback(
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      onChange({ ...value, bidType: e.target.value as BidType });
     },
     [value, onChange],
   );
 
-  const handleStartDateChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      onChange({ ...value, startDate: e.target.value });
+  const handleChannelChange = useCallback(
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      onChange({ ...value, channel: e.target.value as Channel });
     },
     [value, onChange],
   );
 
-  const handleEndDateChange = useCallback(
+  const handleDisplayModeChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      onChange({ ...value, endDate: e.target.value });
+      onChange({ ...value, displayMode: e.target.value as DisplayMode });
+    },
+    [value, onChange],
+  );
+
+  const handleYScaleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      onChange({ ...value, yScale: e.target.value as YScale });
     },
     [value, onChange],
   );
@@ -76,97 +74,127 @@ export function FilterPanel({ value, onChange }: FilterPanelProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>筛选条件</CardTitle>
+        <CardTitle>筛选控制区域</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <Label>App 选择</Label>
-            <div className="flex gap-2">
-              <Button variant="ghost" size="xs" onClick={handleSelectAllApps}>
-                全选
-              </Button>
-              <Button variant="ghost" size="xs" onClick={handleClearApps}>
-                清空
-              </Button>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            {APP_IDS.map((appId) => (
-              <label
-                key={appId}
-                className="flex cursor-pointer items-center gap-2"
-              >
-                <Checkbox
-                  checked={value.appIds.includes(appId)}
-                  onCheckedChange={() => handleAppToggle(appId)}
-                />
-                <Badge
-                  variant={value.appIds.includes(appId) ? "default" : "outline"}
-                >
-                  {appId}
-                </Badge>
-              </label>
-            ))}
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          <Label>国家</Label>
-          <div className="flex gap-3">
-            {COUNTRIES.map((country) => (
-              <label
-                key={country}
-                className="flex cursor-pointer items-center gap-2"
-              >
-                <Checkbox
-                  checked={value.countries.includes(country)}
-                  onCheckedChange={() => handleCountryToggle(country)}
-                />
-                <Badge
-                  variant={
-                    value.countries.includes(country) ? "default" : "outline"
-                  }
-                >
-                  {country === "US" ? "美国 (US)" : "英国 (UK)"}
-                </Badge>
-              </label>
-            ))}
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          <Label>ROI 周期</Label>
-          <Tabs value={value.roiPeriod} onValueChange={handleRoiPeriodChange}>
-            <TabsList className="flex flex-wrap">
-              {ROI_PERIODS.map((period) => (
-                <TabsTrigger key={period} value={period}>
-                  {period}
-                </TabsTrigger>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="space-y-2">
+            <Label>用户安装渠道</Label>
+            <select
+              value={value.channel}
+              onChange={handleChannelChange}
+              className="flex h-8 w-full items-center justify-between gap-2 rounded-lg border border-input bg-transparent px-2.5 py-1.5 text-sm text-foreground shadow-sm outline-none focus:border-ring focus:ring-3 focus:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {CHANNELS.map((channel) => (
+                <option key={channel} value={channel}>
+                  {channel}
+                </option>
               ))}
-            </TabsList>
-          </Tabs>
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>出价类型</Label>
+            <select
+              value={value.bidType}
+              onChange={handleBidTypeChange}
+              className="flex h-8 w-full items-center justify-between gap-2 rounded-lg border border-input bg-transparent px-2.5 py-1.5 text-sm text-foreground shadow-sm outline-none focus:border-ring focus:ring-3 focus:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {BID_TYPES.map((bidType) => (
+                <option key={bidType} value={bidType}>
+                  {bidType}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>国家地区</Label>
+            <select
+              value={value.countries[0] || ""}
+              onChange={handleCountryChange}
+              className="flex h-8 w-full items-center justify-between gap-2 rounded-lg border border-input bg-transparent px-2.5 py-1.5 text-sm text-foreground shadow-sm outline-none focus:border-ring focus:ring-3 focus:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <option value="">全部</option>
+              {COUNTRIES.map((country) => (
+                <option key={country} value={country}>
+                  {country === "US" ? "美国 (US)" : "英国 (UK)"}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>APP</Label>
+            <select
+              value={value.appIds[0] || ""}
+              onChange={handleAppChange}
+              className="flex h-8 w-full items-center justify-between gap-2 rounded-lg border border-input bg-transparent px-2.5 py-1.5 text-sm text-foreground shadow-sm outline-none focus:border-ring focus:ring-3 focus:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <option value="">全部</option>
+              {APP_IDS.map((appId) => (
+                <option key={appId} value={appId}>
+                  {appId}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
-        <div className="space-y-3">
-          <Label>日期范围</Label>
-          <div className="flex items-center gap-3">
-            <div className="flex-1">
-              <Input
-                type="date"
-                value={value.startDate}
-                onChange={handleStartDateChange}
-                placeholder="开始日期"
-              />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <Label>数据显示模式</Label>
+            <div className="flex gap-6">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="displayMode"
+                  value="moving_average"
+                  checked={value.displayMode === "moving_average"}
+                  onChange={handleDisplayModeChange}
+                  className="size-4 accent-primary"
+                />
+                显示移动平均值
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="displayMode"
+                  value="raw"
+                  checked={value.displayMode === "raw"}
+                  onChange={handleDisplayModeChange}
+                  className="size-4 accent-primary"
+                />
+                显示原始数据
+              </label>
             </div>
-            <span className="text-muted-foreground">至</span>
-            <div className="flex-1">
-              <Input
-                type="date"
-                value={value.endDate}
-                onChange={handleEndDateChange}
-                placeholder="结束日期"
-              />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Y 轴刻度</Label>
+            <div className="flex gap-6">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="yScale"
+                  value="linear"
+                  checked={value.yScale === "linear"}
+                  onChange={handleYScaleChange}
+                  className="size-4 accent-primary"
+                />
+                线性刻度
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="yScale"
+                  value="log"
+                  checked={value.yScale === "log"}
+                  onChange={handleYScaleChange}
+                  className="size-4 accent-primary"
+                />
+                对数刻度
+              </label>
             </div>
           </div>
         </div>
