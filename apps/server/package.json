@@ -8,7 +8,8 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "type-check": "tsc --noEmit",
-    "data:import": "tsx src/services/import/run.ts"
+    "data:import": "tsx src/services/import/run.ts",
+    "db:migrate": "tsx src/db/migrate.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
