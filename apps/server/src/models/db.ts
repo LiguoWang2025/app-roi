@@ -20,10 +20,10 @@ export async function initDatabase(): Promise<Pool> {
         max: 10,
         idleTimeoutMillis: 30000,
         connectionTimeoutMillis: 10000,
-        ssl:
-          process.env.NODE_ENV === "production"
-            ? { rejectUnauthorized: false }
-            : false,
+        ssl: false,
+        // process.env.NODE_ENV === "production"
+        //   ? { rejectUnauthorized: false }
+        //   : false,
       }
     : {
         host: process.env.POSTGRES_HOST ?? "localhost",
