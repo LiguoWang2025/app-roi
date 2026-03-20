@@ -6,7 +6,7 @@ import { SummaryCards } from "@/components/SummaryCards";
 import { ROITrendChart } from "@/components/ROITrendChart";
 import { UploadModal } from "@/components/UploadModal";
 import { useROI } from "@/hooks/useROI";
-import { DEFAULT_FILTER, type FilterState } from "@/lib/types";
+import { DEFAULT_FILTER, APP_IDS, type FilterState } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 
 export default function HomePage() {
@@ -16,6 +16,8 @@ export default function HomePage() {
     filter,
   });
   const displayData = data;
+
+  const selectedApp = filter.appIds[0] || APP_IDS[0];
 
   // Debug logging
   if (process.env.NODE_ENV === "development") {
@@ -27,12 +29,14 @@ export default function HomePage() {
     <main className="min-h-screen bg-slate-50 p-8">
       <div className="mx-auto max-w-6xl space-y-6">
         <div className="flex items-start justify-between rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-          <div>
-            <h1 className="text-2xl font-semibold text-slate-900">
-              App-1 - 多时间维度 ROI 趋势
-            </h1>
-            <p className="mt-2 text-sm text-slate-600">(7 日移动平均)</p>
-            <p className="mt-1 text-xs text-slate-500">数据范围：最近 90 天</p>
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-semibold text-slate-900">
+                {selectedApp} - 多时间维度 ROI 趋势
+              </h1>
+            </div>
+            <p className="text-sm text-slate-600">(7 日移动平均)</p>
+            <p className="text-xs text-slate-500">数据范围：最近 90 天</p>
           </div>
           <Button variant="default" onClick={() => setShowUpload(true)}>
             上传 CSV
@@ -55,7 +59,6 @@ export default function HomePage() {
 
         {!isLoading && !error && (
           <>
-            <SummaryCards data={displayData} />
             <ROITrendChart data={displayData} yScale={filter.yScale} />
           </>
         )}

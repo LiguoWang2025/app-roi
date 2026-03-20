@@ -18,6 +18,13 @@ import {
 } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface FilterPanelProps {
   value: FilterState;
@@ -26,8 +33,7 @@ interface FilterPanelProps {
 
 export function FilterPanel({ value, onChange }: FilterPanelProps) {
   const handleAppChange = useCallback(
-    (e: React.ChangeEvent<HTMLSelectElement>) => {
-      const appId = e.target.value;
+    (appId: string) => {
       const newAppIds = appId ? [appId as AppId] : [];
       onChange({ ...value, appIds: newAppIds });
     },
@@ -35,8 +41,7 @@ export function FilterPanel({ value, onChange }: FilterPanelProps) {
   );
 
   const handleCountryChange = useCallback(
-    (e: React.ChangeEvent<HTMLSelectElement>) => {
-      const country = e.target.value;
+    (country: string) => {
       const newCountries = country ? [country as Country] : [];
       onChange({ ...value, countries: newCountries });
     },
@@ -44,15 +49,15 @@ export function FilterPanel({ value, onChange }: FilterPanelProps) {
   );
 
   const handleBidTypeChange = useCallback(
-    (e: React.ChangeEvent<HTMLSelectElement>) => {
-      onChange({ ...value, bidType: e.target.value as BidType });
+    (bidType: string) => {
+      onChange({ ...value, bidType: bidType as BidType });
     },
     [value, onChange],
   );
 
   const handleChannelChange = useCallback(
-    (e: React.ChangeEvent<HTMLSelectElement>) => {
-      onChange({ ...value, channel: e.target.value as Channel });
+    (channel: string) => {
+      onChange({ ...value, channel: channel as Channel });
     },
     [value, onChange],
   );
@@ -80,64 +85,72 @@ export function FilterPanel({ value, onChange }: FilterPanelProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="space-y-2">
             <Label>用户安装渠道</Label>
-            <select
-              value={value.channel}
-              onChange={handleChannelChange}
-              className="flex h-8 w-full items-center justify-between gap-2 rounded-lg border border-input bg-transparent px-2.5 py-1.5 text-sm text-foreground shadow-sm outline-none focus:border-ring focus:ring-3 focus:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {CHANNELS.map((channel) => (
-                <option key={channel} value={channel}>
-                  {channel}
-                </option>
-              ))}
-            </select>
+            <Select value={value.channel} onValueChange={handleChannelChange}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CHANNELS.map((channel) => (
+                  <SelectItem key={channel} value={channel}>
+                    {channel}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">
             <Label>出价类型</Label>
-            <select
-              value={value.bidType}
-              onChange={handleBidTypeChange}
-              className="flex h-8 w-full items-center justify-between gap-2 rounded-lg border border-input bg-transparent px-2.5 py-1.5 text-sm text-foreground shadow-sm outline-none focus:border-ring focus:ring-3 focus:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {BID_TYPES.map((bidType) => (
-                <option key={bidType} value={bidType}>
-                  {bidType}
-                </option>
-              ))}
-            </select>
+            <Select value={value.bidType} onValueChange={handleBidTypeChange}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {BID_TYPES.map((bidType) => (
+                  <SelectItem key={bidType} value={bidType}>
+                    {bidType}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">
             <Label>国家地区</Label>
-            <select
+            <Select
               value={value.countries[0] || ""}
-              onChange={handleCountryChange}
-              className="flex h-8 w-full items-center justify-between gap-2 rounded-lg border border-input bg-transparent px-2.5 py-1.5 text-sm text-foreground shadow-sm outline-none focus:border-ring focus:ring-3 focus:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
+              onValueChange={handleCountryChange}
             >
-              <option value="">全部</option>
-              {COUNTRIES.map((country) => (
-                <option key={country} value={country}>
-                  {country === "US" ? "美国 (US)" : "英国 (UK)"}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger>
+                <SelectValue placeholder="选择国家" />
+              </SelectTrigger>
+              <SelectContent>
+                {COUNTRIES.map((country) => (
+                  <SelectItem key={country} value={country}>
+                    {country === "US" ? "美国 (US)" : "英国 (UK)"}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">
             <Label>APP</Label>
-            <select
+            <Select
               value={value.appIds[0] || ""}
-              onChange={handleAppChange}
-              className="flex h-8 w-full items-center justify-between gap-2 rounded-lg border border-input bg-transparent px-2.5 py-1.5 text-sm text-foreground shadow-sm outline-none focus:border-ring focus:ring-3 focus:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
+              onValueChange={handleAppChange}
             >
-              <option value="">全部</option>
-              {APP_IDS.map((appId) => (
-                <option key={appId} value={appId}>
-                  {appId}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger>
+                <SelectValue placeholder="选择APP" />
+              </SelectTrigger>
+              <SelectContent>
+                {APP_IDS.map((appId) => (
+                  <SelectItem key={appId} value={appId}>
+                    {appId}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
