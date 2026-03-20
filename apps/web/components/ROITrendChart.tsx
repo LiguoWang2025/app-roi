@@ -224,7 +224,7 @@ export function ROITrendChart({ data, yScale = "linear" }: ROITrendChartProps) {
       }
     })();
     return (
-      <div className="rounded-lg border bg-background p-4 shadow-md">
+      <div className="rounded-lg border bg-background p-4 shadow-md text-foreground">
         <p className="mb-2 text-sm font-semibold">{dateLabel}</p>
         <div className="space-y-1">
           {payload.map((entry, index) => {
@@ -249,7 +249,6 @@ export function ROITrendChart({ data, yScale = "linear" }: ROITrendChartProps) {
               (entry.payload[missingKey as keyof ChartDataPoint] as
                 | boolean
                 | undefined) ?? false;
-            // 关键：如果检测到掩码，强制显示为 0，而不是底线值 LOG_SCALE_MIN_VALUE
             const displayValue = isActualZero ? 0 : originalValue;
             return (
               <div
@@ -281,7 +280,7 @@ export function ROITrendChart({ data, yScale = "linear" }: ROITrendChartProps) {
   const isLogScale = yScale === "log";
 
   return (
-    <Card>
+    <Card className="bg-card text-card-foreground">
       <CardHeader>
         <CardTitle>ROI 趋势分析</CardTitle>
       </CardHeader>
@@ -289,7 +288,7 @@ export function ROITrendChart({ data, yScale = "linear" }: ROITrendChartProps) {
         <div className="h-[500px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
               <XAxis
                 dataKey="date"
                 tickFormatter={(value) => {

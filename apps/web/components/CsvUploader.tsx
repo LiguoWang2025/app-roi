@@ -70,13 +70,13 @@ export function CsvUploader() {
   };
 
   return (
-    <Card>
+    <Card className="bg-card text-card-foreground">
       <CardHeader>
         <CardTitle>CSV 数据上传</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div
-          className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-300 p-8 text-center hover:border-slate-400"
+          className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-700 p-8 text-center hover:border-slate-400 dark:hover:border-slate-600"
           onDragOver={handleDragOver}
           onDrop={handleDrop}
         >
@@ -90,13 +90,13 @@ export function CsvUploader() {
             id="csv-upload"
           />
           <label htmlFor="csv-upload" className="cursor-pointer text-center">
-            <div className="text-sm text-slate-600">
-              <span className="font-medium text-blue-600 hover:text-blue-500">
+            <div className="text-sm text-slate-600 dark:text-slate-400">
+              <span className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300">
                 点击上传
               </span>{" "}
               或将文件拖拽至此
             </div>
-            <div className="mt-1 text-xs text-slate-500">
+            <div className="mt-1 text-xs text-slate-500 dark:text-slate-500">
               仅支持 CSV 格式文件，最大 50MB
             </div>
           </label>

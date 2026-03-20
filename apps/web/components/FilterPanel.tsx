@@ -77,7 +77,7 @@ export function FilterPanel({ value, onChange }: FilterPanelProps) {
   );
 
   return (
-    <Card>
+    <Card className="bg-card text-card-foreground">
       <CardHeader>
         <CardTitle>筛选控制区域</CardTitle>
       </CardHeader>

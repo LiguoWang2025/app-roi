@@ -11,9 +11,9 @@ export function UploadModal({ open, onClose }: UploadModalProps) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative z-50 w-full max-w-lg p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/50 dark:bg-black/70" onClick={onClose} />
+      <div className="relative z-50 w-full max-w-lg rounded-lg bg-background p-4 shadow-lg">
         <CsvUploader />
       </div>
     </div>
