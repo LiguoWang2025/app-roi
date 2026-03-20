@@ -1,9 +1,17 @@
 import "dotenv/config";
+import dotenv from "dotenv";
 import fs from "node:fs";
 import path from "node:path";
 import { initDatabase, getPool, closeDatabase } from "../models/db";
 
 const MIGRATIONS_DIR = path.resolve(__dirname, "../../migrations");
+
+dotenv.config({
+  path: [
+    // path.resolve(process.cwd(), ".env"),
+    path.resolve(process.cwd(), "../../.env"),
+  ],
+});
 
 async function migrate() {
   try {
