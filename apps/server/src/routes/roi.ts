@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import { ZodError } from "zod";
 import { roiQuerySchema } from "../schemas/roiQuerySchema";
-import { pool } from "../models/db";
+import { getPool } from "../models/db";
 
 const router = Router();
 const ROI_REASON_MAP = {
@@ -110,6 +110,8 @@ router.get("/roi", async (req: Request, res: Response) => {
       ${outerWhere}
       ORDER BY stat_date, app_id, country
     `;
+
+    const pool = getPool();
 
     const [dataResult, metaResult] = await Promise.all([
       pool.query(sql, params),

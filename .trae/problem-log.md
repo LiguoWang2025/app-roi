@@ -1,54 +1,81 @@
-## [2026-03-20] 环境变量配置
+## [2026-03-20] 数据库异步加载实现
 
 ### Issue
-项目需要正确配置环境变量读取机制，确保前后端都能正确读取 .env 文件中的配置。
+
+数据库连接需要在应用启动时异步初始化，而不是在模块加载时同步创建。这样可以：
+
+1. 确保环境变量已正确加载
+2. 提供连接测试和错误处理
+3. 支持优雅关闭和连接管理
+4. 支持云数据库（如 Neon）的连接配置
 
 ### Cause
-项目需要：
-1. 统一的环境变量管理
-2. 前后端分离的环境变量配置
-3. TypeScript 类型支持
-4. 安全性（.env 文件不应提交到版本控制）
+
+原实现使用同步方式创建数据库连接池：
+
+- 模块加载时立即创建 Pool 实例
+- 无法测试连接是否成功
+- 没有错误处理机制
+- 不支持优雅关闭
 
 ### Solution
-创建了以下配置：
 
-**1. 环境变量文件结构：**
-- `/Users/wangliguo/www/Ad-ROI/.env` - 根目录环境配置（通用）
-- `/Users/wangliguo/www/Ad-ROI/apps/server/.env` - 后端专用配置
-- `/Users/wangliguo/www/Ad-ROI/apps/web/.env` - 前端专用配置
-- `/Users/wangliguo/www/Ad-ROI/.env.example` - 示例配置（可提交）
+重构了数据库连接为异步初始化模式：
 
-**2. 后端配置（Express + dotenv）：**
-- 已在 `src/index.ts` 配置 `import "dotenv/config"`
-- 自动读取 `.env` 文件
-- 创建类型定义：`src/types/env.d.ts`
+**1. 数据库模块重构 (`src/models/db.ts`)：**
 
-**3. 前端配置（Next.js）：**
-- Next.js 自动读取 `.env`、`.env.local` 文件
-- `NEXT_PUBLIC_` 前缀的变量会暴露给客户端
-- 创建类型定义：`types/env.d.ts`
+- `initDatabase()`: 异步初始化函数，测试连接并返回 Pool 实例
+- `getPool()`: 获取已初始化的 Pool 实例
+- `closeDatabase()`: 优雅关闭数据库连接
+- 支持 Neon 等云数据库的 POSTGRES_URL 连接字符串
+- 生产环境自动启用 SSL
+- 连接失败时抛出详细错误信息
 
-**4. 环境变量说明：**
+**2. 主入口更新 (`src/index.ts`)：**
 
-后端环境变量：
-- `POSTGRES_USER` - 数据库用户名
-- `POSTGRES_PASSWORD` - 数据库密码
-- `POSTGRES_DATABASE` - 数据库名称
-- `POSTGRES_HOST` - 数据库主机
-- `POSTGRES_PORT` - 数据库端口
-- `SERVER_PORT` - 服务器端口 (3001)
-- `NODE_ENV` - 运行环境
-- `CORS_ORIGIN` - CORS 允许的源
+- `startServer()`: 异步启动函数，先初始化数据库再启动服务器
+- 添加 SIGINT 和 SIGTERM 信号处理
+- 优雅关闭时释放数据库连接
+- 启动失败时自动退出进程
 
-前端环境变量：
-- `NEXT_PUBLIC_API_URL` - API 服务器地址 (http://localhost:3001)
+**3. 路由和 Service 更新：**
 
-**5. 安全性：**
-- `.gitignore` 已配置忽略 `.env` 文件
-- 只有 `.env.example` 可以提交到版本控制
+- `routes/roi.ts`: 使用 `getPool()` 获取连接池
+- `services/import/csvImporter.ts`: 使用 `getPool()` 获取连接池
+- `db/migrate.ts`: 使用 `initDatabase()` 和 `closeDatabase()`
+- `services/import/run.ts`: 使用 `initDatabase()` 和 `closeDatabase()`
 
-**使用方式：**
-1. 复制 `.env.example` 到各应用的 `.env` 文件
-2. 根据实际环境修改配置
-3. 重启开发服务器使配置生效
+**4. 连接配置优先级：**
+
+- 优先使用 `POSTGRES_URL` (Neon 等云数据库)
+- 回退到独立参数配置 (POSTGRES_HOST, POSTGRES_USER 等)
+- 从根目录 `.env` 文件加载配置
+
+**5. 错误处理：**
+
+- 连接失败时显示详细错误信息
+- 启动失败时优雅退出
+- 迁移脚本添加 try-catch 和错误处理
+
+**使用示例：**
+
+```typescript
+// 应用启动
+await initDatabase();
+const pool = getPool();
+
+// 优雅关闭
+await closeDatabase();
+```
+
+**日志输出：**
+
+```
+🔍 加载数据库配置...
+POSTGRES_URL: 已配置
+POSTGRES_HOST: ep-lucky-violet-adhlu6hz-pooler.c-2.us-east-1.aws.neon.tech
+POSTGRES_USER: neondb_owner
+POSTGRES_DATABASE: neondb
+✅ 数据库连接成功！
+🚀 [server] listening on http://localhost:3001
+```

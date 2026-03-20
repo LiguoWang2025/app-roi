@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import { parse } from "fast-csv";
 import { PoolClient } from "pg";
-import { pool } from "../../models/db";
+import { getPool } from "../../models/db";
 import { csvRowSchema, CsvRow, mapCountry } from "../../schemas/csvRowSchema";
 
 const BATCH_SIZE = 200;
@@ -285,6 +285,7 @@ export async function importCsv(
     return { imported: 0, collectionDate: effectiveDate, errors };
   }
 
+  const pool = getPool();
   const client = await pool.connect();
   try {
     await client.query("BEGIN");

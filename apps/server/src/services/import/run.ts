@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import path from 'node:path';
 import { importCsv } from './csvImporter';
-import { pool } from '../../models/db';
+import { initDatabase, closeDatabase } from '../../models/db';
 
 const DEFAULT_CSV = path.resolve(__dirname, '../../../../data/app_roi_data.csv');
 
@@ -10,6 +10,10 @@ async function main() {
   const collectionDate = process.argv[3]; // optional override
 
   console.log(`[import] source: ${csvPath}`);
+  
+  // 初始化数据库
+  await initDatabase();
+  
   const result = await importCsv(csvPath, collectionDate);
 
   console.log(`[import] done — ${result.imported} rows imported`);
@@ -31,4 +35,6 @@ main()
     console.error('[import] failed:', err);
     process.exit(1);
   })
-  .finally(() => pool.end());
+  .finally(async () => {
+    await closeDatabase();
+  });
