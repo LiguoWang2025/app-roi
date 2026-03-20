@@ -1,5 +1,10 @@
 import { Pool } from "pg";
 
+console.log(process.env.POSTGRES_URL);
+console.log(process.env.POSTGRES_PORT);
+console.log(process.env.POSTGRES_USER);
+console.log(process.env.POSTGRES_DATABASE);
+
 export const pool = new Pool({
   host: process.env.POSTGRES_HOST ?? "localhost",
   port: Number(process.env.POSTGRES_PORT ?? 5432),

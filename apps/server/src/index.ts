@@ -1,8 +1,17 @@
-import "dotenv/config";
+import dotenv from "dotenv";
+import path from "path";
 import express from "express";
 import cors from "cors";
 import importRouter from "./routes/import";
 import roiRouter from "./routes/roi";
+
+// 加载环境变量：优先读取本地 .env，如果不存在则读取根目录 .env
+dotenv.config({
+  path: [
+    // path.resolve(process.cwd(), ".env"),
+    path.resolve(process.cwd(), "../../.env"),
+  ],
+});
 
 const app = express();
 const PORT = process.env.SERVER_PORT ?? 3001;

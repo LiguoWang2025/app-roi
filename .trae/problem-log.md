@@ -1,43 +1,54 @@
-## [2026-03-20] 响应式设计和暗色模式实现
+## [2026-03-20] 环境变量配置
 
 ### Issue
-需要为 Ad-ROI 项目添加响应式设计和暗色模式支持，以提升用户体验和可访问性。
+项目需要正确配置环境变量读取机制，确保前后端都能正确读取 .env 文件中的配置。
 
 ### Cause
-项目初始版本缺少：
-1. 暗色模式切换功能
-2. 完整的响应式布局优化
-3. 暗色模式下的 UI 组件样式适配
+项目需要：
+1. 统一的环境变量管理
+2. 前后端分离的环境变量配置
+3. TypeScript 类型支持
+4. 安全性（.env 文件不应提交到版本控制）
 
 ### Solution
-实现了以下功能：
+创建了以下配置：
 
-1. **创建暗色模式切换组件** (`ThemeToggle.tsx`)
-   - 使用 localStorage 持久化用户偏好
-   - 支持系统偏好检测
-   - 提供太阳/月亮图标切换
+**1. 环境变量文件结构：**
+- `/Users/wangliguo/www/Ad-ROI/.env` - 根目录环境配置（通用）
+- `/Users/wangliguo/www/Ad-ROI/apps/server/.env` - 后端专用配置
+- `/Users/wangliguo/www/Ad-ROI/apps/web/.env` - 前端专用配置
+- `/Users/wangliguo/www/Ad-ROI/.env.example` - 示例配置（可提交）
 
-2. **更新全局样式** (`globals.css`)
-   - 添加 scroll-smooth 到 html
-   - 添加字体特性设置
-   - 确保暗色模式 CSS 变量正确应用
+**2. 后端配置（Express + dotenv）：**
+- 已在 `src/index.ts` 配置 `import "dotenv/config"`
+- 自动读取 `.env` 文件
+- 创建类型定义：`src/types/env.d.ts`
 
-3. **优化主页面响应式布局** (`page.tsx`)
-   - 使用 Tailwind 响应式类 (sm:, md:)
-   - 优化移动端内边距和间距
-   - 添加暗色模式支持到所有 UI 元素
-   - 集成 ThemeToggle 组件
+**3. 前端配置（Next.js）：**
+- Next.js 自动读取 `.env`、`.env.local` 文件
+- `NEXT_PUBLIC_` 前缀的变量会暴露给客户端
+- 创建类型定义：`types/env.d.ts`
 
-4. **更新组件暗色模式支持**
-   - `FilterPanel.tsx`: 添加 bg-card text-card-foreground 类
-   - `ROITrendChart.tsx`: 添加暗色模式样式，更新 CartesianGrid  stroke 颜色
-   - `UploadModal.tsx`: 添加背景色和暗色模式遮罩层
-   - `CsvUploader.tsx`: 优化拖拽区域暗色模式样式
+**4. 环境变量说明：**
 
-5. **布局改进**
-   - 移动端：p-4, text-xl
-   - 平板：p-6
-   - 桌面：p-8, text-2xl
-   - 最大宽度从 max-w-6xl 提升到 max-w-7xl
+后端环境变量：
+- `POSTGRES_USER` - 数据库用户名
+- `POSTGRES_PASSWORD` - 数据库密码
+- `POSTGRES_DATABASE` - 数据库名称
+- `POSTGRES_HOST` - 数据库主机
+- `POSTGRES_PORT` - 数据库端口
+- `SERVER_PORT` - 服务器端口 (3001)
+- `NODE_ENV` - 运行环境
+- `CORS_ORIGIN` - CORS 允许的源
 
-所有更改已完成并通过 TypeScript 类型检查，无编译错误。
+前端环境变量：
+- `NEXT_PUBLIC_API_URL` - API 服务器地址 (http://localhost:3001)
+
+**5. 安全性：**
+- `.gitignore` 已配置忽略 `.env` 文件
+- 只有 `.env.example` 可以提交到版本控制
+
+**使用方式：**
+1. 复制 `.env.example` 到各应用的 `.env` 文件
+2. 根据实际环境修改配置
+3. 重启开发服务器使配置生效
