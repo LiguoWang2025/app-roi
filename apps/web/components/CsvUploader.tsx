@@ -11,7 +11,11 @@ interface UploadResult {
   errors: string[];
 }
 
-export function CsvUploader() {
+interface CsvUploaderProps {
+  onUploadComplete?: () => void;
+}
+
+export function CsvUploader({ onUploadComplete }: CsvUploaderProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [result, setResult] = useState<UploadResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -46,6 +50,11 @@ export function CsvUploader() {
       }
 
       setResult(data);
+
+      // 上传成功后延迟关闭对话框
+      setTimeout(() => {
+        onUploadComplete?.();
+      }, 1500);
     } catch (err: any) {
       setError(err.message || "上传过程中出现错误");
     } finally {
@@ -103,20 +112,24 @@ export function CsvUploader() {
         </div>
 
         {isUploading && (
-          <div className="rounded-lg bg-blue-50 p-4 text-center">
-            <p className="text-sm text-blue-600">正在上传并处理数据...</p>
+          <div className="rounded-lg bg-blue-50 dark:bg-blue-950/20 p-4 text-center">
+            <p className="text-sm text-blue-600 dark:text-blue-400">
+              正在上传并处理数据...
+            </p>
           </div>
         )}
 
         {error && (
-          <div className="rounded-lg bg-red-50 p-4">
-            <p className="text-sm text-red-600">错误：{error}</p>
+          <div className="rounded-lg bg-red-50 dark:bg-red-950/20 p-4">
+            <p className="text-sm text-red-600 dark:text-red-400">
+              错误：{error}
+            </p>
           </div>
         )}
 
         {result && (
-          <div className="space-y-3 rounded-lg bg-green-50 p-4">
-            <div className="text-sm text-green-800">
+          <div className="space-y-3 rounded-lg bg-green-50 dark:bg-green-950/20 p-4">
+            <div className="text-sm text-green-800 dark:text-green-400">
               <p className="font-medium">✓ 上传成功</p>
               <p className="mt-1">
                 导入行数：<span className="font-medium">{result.imported}</span>
@@ -125,13 +138,16 @@ export function CsvUploader() {
                 数据日期：
                 <span className="font-medium">{result.collection_date}</span>
               </p>
+              <p className="mt-2 text-xs text-green-600 dark:text-green-500">
+                正在刷新数据...
+              </p>
             </div>
             {result.errors && result.errors.length > 0 && (
               <div className="mt-2">
-                <p className="text-sm font-medium text-amber-700">
+                <p className="text-sm font-medium text-amber-700 dark:text-amber-500">
                   警告：{result.errors.length} 行数据解析失败
                 </p>
-                <ul className="mt-1 max-h-32 overflow-y-auto text-xs text-amber-600">
+                <ul className="mt-1 max-h-32 overflow-y-auto text-xs text-amber-600 dark:text-amber-500">
                   {result.errors.slice(0, 5).map((err, idx) => (
                     <li key={idx}>{err}</li>
                   ))}

@@ -12,12 +12,16 @@ import { Button } from "@/components/ui/button";
 export default function HomePage() {
   const [filter, setFilter] = useState<FilterState>(DEFAULT_FILTER);
   const [showUpload, setShowUpload] = useState(false);
-  const { data, isLoading, error } = useROI({
+  const { data, isLoading, error, refetch } = useROI({
     filter,
   });
   const displayData = data;
 
   const selectedApp = filter.appIds[0] || APP_IDS[0];
+
+  const handleUploadComplete = () => {
+    refetch();
+  };
 
   if (process.env.NODE_ENV === "development") {
     console.log("Filter:", filter);
@@ -34,11 +38,17 @@ export default function HomePage() {
               {selectedApp} - 多时间维度 ROI 趋势
             </h1>
             <p className="text-sm text-muted-foreground">(7 日移动平均)</p>
-            <p className="text-xs text-muted-foreground">数据范围：最近 90 天</p>
+            <p className="text-xs text-muted-foreground">
+              数据范围：最近 90 天
+            </p>
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <Button variant="default" onClick={() => setShowUpload(true)} className="w-full sm:w-auto">
+            <Button
+              variant="default"
+              onClick={() => setShowUpload(true)}
+              className="w-full sm:w-auto"
+            >
               上传 CSV
             </Button>
           </div>
@@ -54,7 +64,9 @@ export default function HomePage() {
 
         {error && (
           <div className="rounded-lg border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/20 p-6 text-center">
-            <p className="text-sm text-red-600 dark:text-red-400">错误：{error.message}</p>
+            <p className="text-sm text-red-600 dark:text-red-400">
+              错误：{error.message}
+            </p>
           </div>
         )}
 
@@ -63,7 +75,11 @@ export default function HomePage() {
         )}
       </div>
 
-      <UploadModal open={showUpload} onClose={() => setShowUpload(false)} />
+      <UploadModal
+        open={showUpload}
+        onClose={() => setShowUpload(false)}
+        onUploadComplete={handleUploadComplete}
+      />
     </main>
   );
 }

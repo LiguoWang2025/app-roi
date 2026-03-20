@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "concurrently \"npm run dev --workspace=apps/server\" \"npm run dev --workspace=apps/web\"",
     "build": "npm run build --workspace=apps/server && npm run build --workspace=apps/web",
+    "db:migrate": "npm run migrate --workspace=apps/server",
     "data:import": "npm run data:import --workspace=apps/server",
     "db:up": "docker-compose up -d postgres",
     "db:down": "docker-compose down",
