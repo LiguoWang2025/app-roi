@@ -47,7 +47,7 @@ POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
 POSTGRES_USER=adroi
 POSTGRES_PASSWORD=adroi_secret
-POSTGRES_DB=ad_roi
+POSTGRES_DATABASE=ad_roi
 ```
 
 ### 3. CORS 配置 (`apps/server/src/index.ts`)
@@ -62,7 +62,7 @@ app.use(
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
-  })
+  }),
 );
 ```
 

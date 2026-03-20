@@ -45,7 +45,7 @@ cp .env.example .env
 
 - `POSTGRES_USER`
 - `POSTGRES_PASSWORD`
-- `POSTGRES_DB`
+- `POSTGRES_DATABASE`
 - `POSTGRES_HOST`
 - `POSTGRES_PORT`
 - `SERVER_PORT`
@@ -151,8 +151,6 @@ flowchart LR
     API --> DB[(PostgreSQL)]
 ```
 
-
-
 建议：
 
 - 用 Nginx 统一入口并配置 HTTPS
@@ -193,4 +191,3 @@ flowchart LR
 - **前端请求 404/跨域失败**：检查 `NEXT_PUBLIC_API_URL` 与 `CORS_ORIGIN`
 - **图表无数据**：确认已导入 CSV 且筛选条件有匹配记录
 - **迁移失败**：确认数据库账号权限（建表、建索引、插入）
-

@@ -8,13 +8,17 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-app_roi}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-app_roi_secret}
-      POSTGRES_DB: ${POSTGRES_DB:-ad_roi}
+      POSTGRES_DATABASE: ${POSTGRES_DATABASE:-ad_roi}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-app_roi} -d ${POSTGRES_DB:-ad_roi}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-app_roi} -d ${POSTGRES_DATABASE:-ad_roi}",
+        ]
       interval: 5s
       timeout: 5s
       retries: 10
