@@ -4,6 +4,41 @@
 
 ---
 
+## [2026-03-20] 执行数据库迁移时角色不存在
+
+### Issue
+执行 `npm run db:migrate` 时报错：
+```
+error: role "app_roi" does not exist
+```
+
+### Cause
+1. Docker 容器启动时使用了默认的用户名 `adroi` 而不是配置文件中的 `app_roi`
+2. 本地 macOS 上运行的 PostgreSQL 服务（brew services）也监听 5432 端口，导致连接冲突
+3. 客户端连接到了本地 PostgreSQL 服务而不是 Docker 容器中的数据库
+
+### Solution
+1. 修改 `docker-compose.yml` 中的默认用户名和密码为 `app_roi` 和 `app_roi_secret`
+2. 停止本地 PostgreSQL 服务：
+   ```bash
+   # 方法 1: 使用 brew services
+   brew services stop postgresql@17
+   
+   # 方法 2: 直接 kill 进程
+   killall postgres
+   ```
+3. 重新创建 Docker 容器：
+   ```bash
+   docker-compose down -v
+   docker-compose up -d postgres
+   ```
+4. 执行迁移：
+   ```bash
+   npm run db:migrate --workspace=apps/server
+   ```
+
+---
+
 ## [2026-03-19] Next.js 14.2.x 不支持 next.config.ts
 
 ### Issue

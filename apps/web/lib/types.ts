@@ -36,8 +36,8 @@ export interface FilterState {
 }
 
 export const DEFAULT_FILTER: FilterState = {
-  appIds: [],
-  countries: [],
+  appIds: ["App-1"],
+  countries: ["US"],
   bidType: "CPI",
   channel: "Apple",
   roiPeriod: "7d",
@@ -55,6 +55,15 @@ export interface RoiDataPoint {
   roi_value: number | null;
   roi_status: 1 | 2 | 3;
   moving_avg: number | null;
+  roi_0d?: number | null;
+  roi_1d?: number | null;
+  roi_3d?: number | null;
+  roi_7d?: number | null;
+  roi_14d?: number | null;
+  roi_30d?: number | null;
+  roi_60d?: number | null;
+  roi_90d?: number | null;
+  forecast?: number | null;
 }
 
 export interface RoiResponse {

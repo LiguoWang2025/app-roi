@@ -1,8 +1,8 @@
-import fs from 'node:fs';
-import { parse } from 'fast-csv';
-import { PoolClient } from 'pg';
-import { pool } from '../../models/db';
-import { csvRowSchema, CsvRow, mapCountry } from '../../schemas/csvRowSchema';
+import fs from "node:fs";
+import { parse } from "fast-csv";
+import { PoolClient } from "pg";
+import { pool } from "../../models/db";
+import { csvRowSchema, CsvRow, mapCountry } from "../../schemas/csvRowSchema";
 
 const BATCH_SIZE = 200;
 
@@ -11,27 +11,33 @@ const BATCH_SIZE = 200;
  * Jul 12 has roi_1d values but roi_3d = 0%, meaning Jul 13 had passed
  * but Jul 14+ had not at time of collection.
  */
-const DEFAULT_COLLECTION_DATE = '2025-07-13';
+const DEFAULT_COLLECTION_DATE = "2025-07-13";
 
 const ROI_COLUMNS = [
-  'roi_0d', 'roi_1d', 'roi_3d', 'roi_7d',
-  'roi_14d', 'roi_30d', 'roi_60d', 'roi_90d',
+  "roi_0d",
+  "roi_1d",
+  "roi_3d",
+  "roi_7d",
+  "roi_14d",
+  "roi_30d",
+  "roi_60d",
+  "roi_90d",
 ] as const;
 
 const CSV_HEADER_MAP: Record<string, string> = {
-  '日期': 'raw_date',
-  'app': 'app_id',
-  '出价类型': 'bid_type',
-  '国家地区': 'raw_country',
-  '应用安装.总次数': 'installs',
-  '当日ROI': 'roi_0d',
-  '1日ROI': 'roi_1d',
-  '3日ROI': 'roi_3d',
-  '7日ROI': 'roi_7d',
-  '14日ROI': 'roi_14d',
-  '30日ROI': 'roi_30d',
-  '60日ROI': 'roi_60d',
-  '90日ROI': 'roi_90d',
+  日期: "raw_date",
+  app: "app_id",
+  出价类型: "bid_type",
+  国家地区: "raw_country",
+  "应用安装.总次数": "installs",
+  当日ROI: "roi_0d",
+  "1日ROI": "roi_1d",
+  "3日ROI": "roi_3d",
+  "7日ROI": "roi_7d",
+  "14日ROI": "roi_14d",
+  "30日ROI": "roi_30d",
+  "60日ROI": "roi_60d",
+  "90日ROI": "roi_90d",
 };
 
 function parseDate(raw: string): string {
@@ -46,17 +52,18 @@ function parseDate(raw: string): string {
  * "0%"      → 0
  */
 function parseRoiPercent(raw: string): number {
-  if (!raw || raw.trim() === '') return 0;
-  const cleaned = raw.replace(/,/g, '').replace(/%/g, '').trim();
+  if (!raw || raw.trim() === "") return 0;
+  const cleaned = raw.replace(/,/g, "").replace(/%/g, "").trim();
   const num = Number(cleaned);
   if (Number.isNaN(num)) throw new Error(`Cannot parse ROI value: "${raw}"`);
   return +(num / 100).toFixed(6);
 }
 
 function parseInstalls(raw: string): number {
-  const cleaned = raw.replace(/,/g, '').trim();
+  const cleaned = raw.replace(/,/g, "").trim();
   const num = Number(cleaned);
-  if (Number.isNaN(num) || num < 0) throw new Error(`Invalid installs: "${raw}"`);
+  if (Number.isNaN(num) || num < 0)
+    throw new Error(`Invalid installs: "${raw}"`);
   return Math.round(num);
 }
 
@@ -88,15 +95,17 @@ function transformRow(raw: RawCsvRecord): CsvRow {
   });
 }
 
-function readCsv(filePath: string): Promise<{ rows: CsvRow[]; errors: string[] }> {
+function readCsv(
+  filePath: string,
+): Promise<{ rows: CsvRow[]; errors: string[] }> {
   return new Promise((resolve, reject) => {
     const rows: CsvRow[] = [];
     const errors: string[] = [];
     let lineNum = 1;
 
-    fs.createReadStream(filePath, { encoding: 'utf-8' })
+    fs.createReadStream(filePath, { encoding: "utf-8" })
       .pipe(parse({ headers: true, trim: true }))
-      .on('data', (raw: RawCsvRecord) => {
+      .on("data", (raw: RawCsvRecord) => {
         lineNum++;
         try {
           rows.push(transformRow(raw));
@@ -104,15 +113,22 @@ function readCsv(filePath: string): Promise<{ rows: CsvRow[]; errors: string[] }
           errors.push(`Line ${lineNum}: ${err.message ?? err}`);
         }
       })
-      .on('error', reject)
-      .on('end', () => resolve({ rows, errors }));
+      .on("error", reject)
+      .on("end", () => resolve({ rows, errors }));
   });
 }
 
 async function insertBatch(client: PoolClient, batch: CsvRow[]): Promise<void> {
   if (batch.length === 0) return;
 
-  const cols = ['stat_date', 'app_id', 'country', 'bid_type', 'installs', ...ROI_COLUMNS];
+  const cols = [
+    "stat_date",
+    "app_id",
+    "country",
+    "bid_type",
+    "installs",
+    ...ROI_COLUMNS,
+  ];
   const placeholders: string[] = [];
   const values: unknown[] = [];
   let idx = 1;
@@ -123,22 +139,28 @@ async function insertBatch(client: PoolClient, batch: CsvRow[]): Promise<void> {
       rowPlaceholders.push(`$${idx++}`);
       values.push(row[col as keyof CsvRow]);
     }
-    placeholders.push(`(${rowPlaceholders.join(', ')})`);
+    placeholders.push(`(${rowPlaceholders.join(", ")})`);
   }
 
   const updateSet = cols
-    .filter((c) => c !== 'stat_date' && c !== 'app_id' && c !== 'country')
+    .filter((c) => c !== "stat_date" && c !== "app_id" && c !== "country")
     .map((c) => `${c} = EXCLUDED.${c}`)
-    .join(', ');
+    .join(", ");
 
   const sql = `
-    INSERT INTO roi_metrics (${cols.join(', ')})
-    VALUES ${placeholders.join(',\n       ')}
+    INSERT INTO roi_metrics (${cols.join(", ")})
+    VALUES ${placeholders.join(",\n       ")}
     ON CONFLICT (stat_date, app_id, country)
     DO UPDATE SET ${updateSet}
   `;
 
   await client.query(sql, values);
+}
+
+async function acquireImportLock(client: PoolClient): Promise<void> {
+  await client.query(
+    "SELECT pg_advisory_xact_lock(hashtext('csv_import_lock'))",
+  );
 }
 
 export interface ImportResult {
@@ -163,13 +185,17 @@ export async function importCsv(
 
   const client = await pool.connect();
   try {
-    await client.query('BEGIN');
+    await client.query("BEGIN");
+
+    await acquireImportLock(client);
 
     for (let i = 0; i < rows.length; i += BATCH_SIZE) {
       const batch = rows.slice(i, i + BATCH_SIZE);
       await insertBatch(client, batch);
       if ((i / BATCH_SIZE) % 5 === 0) {
-        console.log(`[import] inserted ${Math.min(i + BATCH_SIZE, rows.length)}/${rows.length}`);
+        console.log(
+          `[import] inserted ${Math.min(i + BATCH_SIZE, rows.length)}/${rows.length}`,
+        );
       }
     }
 
@@ -179,10 +205,12 @@ export async function importCsv(
       [effectiveDate, rows.length],
     );
 
-    await client.query('COMMIT');
-    console.log(`[import] committed ${rows.length} rows, collection_date=${effectiveDate}`);
+    await client.query("COMMIT");
+    console.log(
+      `[import] committed ${rows.length} rows, collection_date=${effectiveDate}`,
+    );
   } catch (err) {
-    await client.query('ROLLBACK');
+    await client.query("ROLLBACK");
     throw err;
   } finally {
     client.release();

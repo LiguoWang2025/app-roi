@@ -1,15 +1,16 @@
-import { Router, Request, Response } from 'express';
-import { ZodError } from 'zod';
-import { roiQuerySchema } from '../schemas/roiQuerySchema';
-import { roiStatusExpr, type RoiPeriod } from '../models/schema';
-import { pool } from '../models/db';
+import { Router, Request, Response } from "express";
+import { ZodError } from "zod";
+import { roiQuerySchema } from "../schemas/roiQuerySchema";
+import { roiStatusExpr, type RoiPeriod } from "../models/schema";
+import { pool } from "../models/db";
 
 const router = Router();
 
-router.get('/roi', async (req: Request, res: Response) => {
+router.get("/roi", async (req: Request, res: Response) => {
   try {
     const query = roiQuerySchema.parse(req.query);
-    const { app_id, country, start_date, end_date, roi_period, ma_days } = query;
+    const { app_id, country, start_date, end_date, roi_period, ma_days } =
+      query;
 
     const roiCol = `roi_${roi_period}`;
     const statusExpr = roiStatusExpr(roi_period as RoiPeriod);
@@ -39,8 +40,10 @@ router.get('/roi', async (req: Request, res: Response) => {
       params.push(end_date);
     }
 
-    const innerWhere = innerConds.length > 0 ? `WHERE ${innerConds.join(' AND ')}` : '';
-    const outerWhere = outerConds.length > 0 ? `WHERE ${outerConds.join(' AND ')}` : '';
+    const innerWhere =
+      innerConds.length > 0 ? `WHERE ${innerConds.join(" AND ")}` : "";
+    const outerWhere =
+      outerConds.length > 0 ? `WHERE ${outerConds.join(" AND ")}` : "";
 
     const sql = `
       WITH base AS (
@@ -49,6 +52,14 @@ router.get('/roi', async (req: Request, res: Response) => {
           r.app_id,
           r.country,
           r.installs,
+          r.roi_0d,
+          r.roi_1d,
+          r.roi_3d,
+          r.roi_7d,
+          r.roi_14d,
+          r.roi_30d,
+          r.roi_60d,
+          r.roi_90d,
           r.${roiCol}  AS roi_value,
           (${statusExpr}) AS roi_status,
           AVG(r.${roiCol}) OVER (
@@ -64,6 +75,14 @@ router.get('/roi', async (req: Request, res: Response) => {
         app_id,
         country,
         installs,
+        roi_0d,
+        roi_1d,
+        roi_3d,
+        roi_7d,
+        roi_14d,
+        roi_30d,
+        roi_60d,
+        roi_90d,
         roi_value,
         roi_status,
         moving_avg
@@ -80,7 +99,8 @@ router.get('/roi', async (req: Request, res: Response) => {
       ),
     ]);
 
-    const collectionDate: string | null = metaResult.rows[0]?.collection_date ?? null;
+    const collectionDate: string | null =
+      metaResult.rows[0]?.collection_date ?? null;
 
     res.json({
       data: dataResult.rows.map((r) => ({
@@ -88,19 +108,29 @@ router.get('/roi', async (req: Request, res: Response) => {
         app_id: r.app_id,
         country: r.country,
         installs: Number(r.installs),
+        roi_0d: r.roi_0d != null ? Number(r.roi_0d) : null,
+        roi_1d: r.roi_1d != null ? Number(r.roi_1d) : null,
+        roi_3d: r.roi_3d != null ? Number(r.roi_3d) : null,
+        roi_7d: r.roi_7d != null ? Number(r.roi_7d) : null,
+        roi_14d: r.roi_14d != null ? Number(r.roi_14d) : null,
+        roi_30d: r.roi_30d != null ? Number(r.roi_30d) : null,
+        roi_60d: r.roi_60d != null ? Number(r.roi_60d) : null,
+        roi_90d: r.roi_90d != null ? Number(r.roi_90d) : null,
         roi_value: r.roi_value != null ? Number(r.roi_value) : null,
-        roi_status: Number(r.roi_status),
+        roi_status: Number(r.roi_status) as 1 | 2 | 3,
         moving_avg: r.moving_avg != null ? Number(r.moving_avg) : null,
       })),
       meta: { collection_date: collectionDate },
     });
   } catch (err) {
     if (err instanceof ZodError) {
-      res.status(400).json({ message: 'Validation failed', details: err.errors });
+      res
+        .status(400)
+        .json({ message: "Validation failed", details: err.errors });
       return;
     }
-    console.error('[roi] query error:', err);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error("[roi] query error:", err);
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 
