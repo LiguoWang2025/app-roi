@@ -34,11 +34,13 @@ const nextConfig = {
 ### 2. 环境变量配置
 
 **前端环境变量** (`apps/web/.env.local`):
+
 ```
 NEXT_PUBLIC_API_URL=http://localhost:3001
 ```
 
 **后端环境变量** (`apps/server/.env.local`):
+
 ```
 SERVER_PORT=3001
 POSTGRES_HOST=localhost
@@ -51,12 +53,17 @@ POSTGRES_DB=ad_roi
 ### 3. CORS 配置 (`apps/server/src/index.ts`)
 
 ```typescript
-app.use(cors({
-  origin: process.env.CORS_ORIGIN || ['http://localhost:3000', 'http://localhost:3001'],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-}));
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN || [
+      "http://localhost:3000",
+      "http://localhost:3001",
+    ],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 ```
 
 ## 启动步骤
@@ -68,18 +75,21 @@ npm run dev
 ```
 
 这会同时启动：
+
 - 前端：http://localhost:3000
 - 后端：http://localhost:3001
 
 ### 方式二：分别启动
 
 **启动后端：**
+
 ```bash
 cd apps/server
 npm run dev
 ```
 
 **启动前端（新终端）：**
+
 ```bash
 cd apps/web
 npm run dev
@@ -94,6 +104,7 @@ curl http://localhost:3001/health
 ```
 
 预期响应：
+
 ```json
 {
   "status": "ok",
@@ -122,6 +133,7 @@ curl -X POST http://localhost:3001/api/upload \
 **症状：** 前端请求返回 404 或网络错误
 
 **解决方案：**
+
 1. 确保后端服务正在运行：`curl http://localhost:3001/health`
 2. 检查 `.env.local` 文件是否存在且配置正确
 3. 重启开发服务器
@@ -131,6 +143,7 @@ curl -X POST http://localhost:3001/api/upload \
 **症状：** 浏览器控制台显示 CORS 相关错误
 
 **解决方案：**
+
 1. 检查后端 CORS 配置是否包含前端地址
 2. 确保前后端都在正确的端口运行
 3. 清除浏览器缓存后重试
@@ -140,6 +153,7 @@ curl -X POST http://localhost:3001/api/upload \
 **症状：** 请求没有转发到后端
 
 **解决方案：**
+
 1. 检查 `next.config.mjs` 中的 rewrites 配置
 2. 确保 `NEXT_PUBLIC_API_URL` 环境变量正确
 3. 重启 Next.js 开发服务器（清除 .next 缓存）
@@ -151,12 +165,11 @@ npm run dev
 
 ## API 端点列表
 
-| 端点 | 方法 | 描述 |
-|------|------|------|
-| `/health` | GET | 健康检查 |
-| `/api/upload` | POST | 上传 CSV 文件（新） |
-| `/api/import` | POST | 导入 CSV 文件（旧） |
-| `/api/roi` | GET | 获取 ROI 数据 |
+| 端点          | 方法 | 描述          |
+| ------------- | ---- | ------------- |
+| `/health`     | GET  | 健康检查      |
+| `/api/import` | POST | 导入 CSV 文件 |
+| `/api/roi`    | GET  | 获取 ROI 数据 |
 
 ## 文件结构
 
