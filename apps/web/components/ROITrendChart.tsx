@@ -40,6 +40,22 @@ interface ChartDataPoint {
   roi_60d_actual_zero?: boolean;
   roi_90d?: number | null;
   roi_90d_actual_zero?: boolean;
+  roi_0d_missing?: boolean;
+  roi_1d_missing?: boolean;
+  roi_3d_missing?: boolean;
+  roi_7d_missing?: boolean;
+  roi_14d_missing?: boolean;
+  roi_30d_missing?: boolean;
+  roi_60d_missing?: boolean;
+  roi_90d_missing?: boolean;
+  roi_0d_insufficient?: boolean;
+  roi_1d_insufficient?: boolean;
+  roi_3d_insufficient?: boolean;
+  roi_7d_insufficient?: boolean;
+  roi_14d_insufficient?: boolean;
+  roi_30d_insufficient?: boolean;
+  roi_60d_insufficient?: boolean;
+  roi_90d_insufficient?: boolean;
   moving_avg?: number | null;
   forecast?: number | null;
 }
@@ -133,6 +149,7 @@ export function ROITrendChart({ data, yScale = "linear" }: ROITrendChartProps) {
    * - 性能优化：useMemo 避免每次渲染都重新计算
    */
   const chartData = useMemo<ChartDataPoint[]>(() => {
+    const fallbackValue = yScale === "log" ? LOG_SCALE_MIN_VALUE : 0;
     return data.map((item) => {
       const base: ChartDataPoint = {
         date: item.stat_date,
@@ -140,19 +157,30 @@ export function ROITrendChart({ data, yScale = "linear" }: ROITrendChartProps) {
 
       ROI_PERIODS.forEach((period) => {
         const key = `roi_${period}`;
+        const statusKey = `${key}_status` as keyof RoiDataPoint;
         const value = (item as any)[key];
         const numericValue = value != null ? Number(value) * 100 : null;
+        const statusValue = item[statusKey] as 1 | 2 | 3 | undefined;
+        const isInsufficient = statusValue === 2;
+        base[`${key}_insufficient` as keyof ChartDataPoint] = isInsufficient;
 
-        if (numericValue === 0) {
-          base[key] = LOG_SCALE_MIN_VALUE;
-          base[`${key}_actual_zero` as keyof ChartDataPoint] = true;
-        } else if (!numericValue) {
-          // 没有值 → 替换为底线值 0，并打上掩码
-          base[key] = LOG_SCALE_MIN_VALUE;
+        if (isInsufficient) {
+          base[key] = fallbackValue;
           base[`${key}_actual_zero` as keyof ChartDataPoint] = false;
+          base[`${key}_missing` as keyof ChartDataPoint] = false;
+        } else if (numericValue === 0) {
+          base[key] = fallbackValue;
+          base[`${key}_actual_zero` as keyof ChartDataPoint] = true;
+          base[`${key}_missing` as keyof ChartDataPoint] = false;
+        } else if (!numericValue) {
+          // 没有值 → 替换为安全底线，并打上掩码
+          base[key] = fallbackValue;
+          base[`${key}_actual_zero` as keyof ChartDataPoint] = false;
+          base[`${key}_missing` as keyof ChartDataPoint] = true;
         } else {
           base[key] = numericValue;
           base[`${key}_actual_zero` as keyof ChartDataPoint] = false;
+          base[`${key}_missing` as keyof ChartDataPoint] = false;
         }
       });
 
@@ -163,7 +191,7 @@ export function ROITrendChart({ data, yScale = "linear" }: ROITrendChartProps) {
 
       return base;
     });
-  }, [data]);
+  }, [data, yScale]);
 
   /**
    * Y 轴格式化函数
@@ -207,14 +235,22 @@ export function ROITrendChart({ data, yScale = "linear" }: ROITrendChartProps) {
               return null;
             }
             const actualZeroKey = `${dataKey}_actual_zero`;
+            const insufficientKey = `${dataKey}_insufficient`;
+            const missingKey = `${dataKey}_missing`;
             const isActualZero =
               (entry.payload[actualZeroKey as keyof ChartDataPoint] as
                 | boolean
                 | undefined) ?? false;
+            const isInsufficient =
+              (entry.payload[insufficientKey as keyof ChartDataPoint] as
+                | boolean
+                | undefined) ?? false;
+            const isMissing =
+              (entry.payload[missingKey as keyof ChartDataPoint] as
+                | boolean
+                | undefined) ?? false;
             // 关键：如果检测到掩码，强制显示为 0，而不是底线值 LOG_SCALE_MIN_VALUE
             const displayValue = isActualZero ? 0 : originalValue;
-            const isNull =
-              originalValue === LOG_SCALE_MIN_VALUE && !isActualZero;
             return (
               <div
                 key={index}
@@ -228,7 +264,11 @@ export function ROITrendChart({ data, yScale = "linear" }: ROITrendChartProps) {
                   <span className="text-muted-foreground">{entry.name}</span>
                 </div>
                 <span className="font-medium">
-                  {isNull ? "没有数据" : displayValue.toFixed(2) + "%"}
+                  {isInsufficient
+                    ? "日期不足"
+                    : isMissing
+                      ? "没有数据"
+                      : displayValue.toFixed(2) + "%"}
                 </span>
               </div>
             );

@@ -1,10 +1,14 @@
 import { Router, Request, Response } from "express";
 import { ZodError } from "zod";
 import { roiQuerySchema } from "../schemas/roiQuerySchema";
-import { roiStatusExpr, type RoiPeriod } from "../models/schema";
 import { pool } from "../models/db";
 
 const router = Router();
+const ROI_REASON_MAP = {
+  1: "valid",
+  2: "insufficient_date",
+  3: "real_zero",
+} as const;
 
 router.get("/roi", async (req: Request, res: Response) => {
   try {
@@ -13,7 +17,7 @@ router.get("/roi", async (req: Request, res: Response) => {
       query;
 
     const roiCol = `roi_${roi_period}`;
-    const statusExpr = roiStatusExpr(roi_period as RoiPeriod);
+    const statusCol = `${roiCol}_status`;
 
     // Entity filters go in the CTE so the window function sees the full
     // date range for each partition → accurate moving averages even at
@@ -60,8 +64,16 @@ router.get("/roi", async (req: Request, res: Response) => {
           r.roi_30d,
           r.roi_60d,
           r.roi_90d,
+          r.roi_0d_status,
+          r.roi_1d_status,
+          r.roi_3d_status,
+          r.roi_7d_status,
+          r.roi_14d_status,
+          r.roi_30d_status,
+          r.roi_60d_status,
+          r.roi_90d_status,
           r.${roiCol}  AS roi_value,
-          (${statusExpr}) AS roi_status,
+          r.${statusCol} AS roi_status,
           AVG(r.${roiCol}) OVER (
             PARTITION BY r.app_id, r.country
             ORDER BY r.stat_date
@@ -83,6 +95,14 @@ router.get("/roi", async (req: Request, res: Response) => {
         roi_30d,
         roi_60d,
         roi_90d,
+        roi_0d_status,
+        roi_1d_status,
+        roi_3d_status,
+        roi_7d_status,
+        roi_14d_status,
+        roi_30d_status,
+        roi_60d_status,
+        roi_90d_status,
         roi_value,
         roi_status,
         moving_avg
@@ -116,8 +136,17 @@ router.get("/roi", async (req: Request, res: Response) => {
         roi_30d: r.roi_30d != null ? Number(r.roi_30d) : null,
         roi_60d: r.roi_60d != null ? Number(r.roi_60d) : null,
         roi_90d: r.roi_90d != null ? Number(r.roi_90d) : null,
+        roi_0d_status: Number(r.roi_0d_status) as 1 | 2 | 3,
+        roi_1d_status: Number(r.roi_1d_status) as 1 | 2 | 3,
+        roi_3d_status: Number(r.roi_3d_status) as 1 | 2 | 3,
+        roi_7d_status: Number(r.roi_7d_status) as 1 | 2 | 3,
+        roi_14d_status: Number(r.roi_14d_status) as 1 | 2 | 3,
+        roi_30d_status: Number(r.roi_30d_status) as 1 | 2 | 3,
+        roi_60d_status: Number(r.roi_60d_status) as 1 | 2 | 3,
+        roi_90d_status: Number(r.roi_90d_status) as 1 | 2 | 3,
         roi_value: r.roi_value != null ? Number(r.roi_value) : null,
         roi_status: Number(r.roi_status) as 1 | 2 | 3,
+        roi_reason: ROI_REASON_MAP[Number(r.roi_status) as 1 | 2 | 3],
         moving_avg: r.moving_avg != null ? Number(r.moving_avg) : null,
       })),
       meta: { collection_date: collectionDate },

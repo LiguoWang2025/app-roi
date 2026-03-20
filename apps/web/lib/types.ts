@@ -54,6 +54,15 @@ export interface RoiDataPoint {
   installs: number;
   roi_value: number | null;
   roi_status: 1 | 2 | 3;
+  roi_reason?: "valid" | "insufficient_date" | "real_zero";
+  roi_0d_status?: 1 | 2 | 3;
+  roi_1d_status?: 1 | 2 | 3;
+  roi_3d_status?: 1 | 2 | 3;
+  roi_7d_status?: 1 | 2 | 3;
+  roi_14d_status?: 1 | 2 | 3;
+  roi_30d_status?: 1 | 2 | 3;
+  roi_60d_status?: 1 | 2 | 3;
+  roi_90d_status?: 1 | 2 | 3;
   moving_avg: number | null;
   roi_0d?: number | null;
   roi_1d?: number | null;

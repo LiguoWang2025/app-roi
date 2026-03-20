@@ -1,11 +1,11 @@
 /**
- * DDL constants mirroring migrations/001_init.sql.
+ * DDL constants mirroring migrations.
  * Used by the migrate script and (optionally) integration tests.
  *
- * roi_status is computed at query time – it is never stored as a column:
- *   1 = Valid   (period elapsed, non-zero ROI)
- *   2 = Pending (period not yet elapsed at collection snapshot)
- *   3 = Zero    (period elapsed but ROI is 0)
+ * ROI status values (stored per period):
+ *   1 = Valid      (period elapsed, non-zero ROI)
+ *   2 = Insufficient Date (period not elapsed at collection snapshot)
+ *   3 = Real Zero  (period elapsed but ROI is 0)
  */
 
 export const ROI_PERIODS = [
@@ -25,24 +25,6 @@ export const ROI_PERIOD_DAYS: Record<RoiPeriod, number> = {
   '60d': 60,
   '90d': 90,
 };
-
-/**
- * Returns the SQL CASE expression that computes roi_status for a given period.
- * The column name follows the pattern roi_Nd (e.g. roi_7d).
- */
-export function roiStatusExpr(period: RoiPeriod): string {
-  const days = ROI_PERIOD_DAYS[period];
-  const col = `roi_${period}`;
-  return /* sql */ `
-    CASE
-      WHEN stat_date + INTERVAL '${days} days'
-           > (SELECT collection_date FROM import_metadata LIMIT 1)
-      THEN 2
-      WHEN ${col} = 0 OR ${col} IS NULL
-      THEN 3
-      ELSE 1
-    END`.trim();
-}
 
 export const CREATE_TABLES_SQL = /* sql */ `
 CREATE TABLE IF NOT EXISTS import_metadata (
@@ -67,6 +49,14 @@ CREATE TABLE IF NOT EXISTS roi_metrics (
     roi_30d  DECIMAL(10, 4),
     roi_60d  DECIMAL(10, 4),
     roi_90d  DECIMAL(10, 4),
+    roi_0d_status  SMALLINT   NOT NULL DEFAULT 1 CHECK (roi_0d_status  IN (1, 2, 3)),
+    roi_1d_status  SMALLINT   NOT NULL DEFAULT 1 CHECK (roi_1d_status  IN (1, 2, 3)),
+    roi_3d_status  SMALLINT   NOT NULL DEFAULT 1 CHECK (roi_3d_status  IN (1, 2, 3)),
+    roi_7d_status  SMALLINT   NOT NULL DEFAULT 1 CHECK (roi_7d_status  IN (1, 2, 3)),
+    roi_14d_status SMALLINT   NOT NULL DEFAULT 1 CHECK (roi_14d_status IN (1, 2, 3)),
+    roi_30d_status SMALLINT   NOT NULL DEFAULT 1 CHECK (roi_30d_status IN (1, 2, 3)),
+    roi_60d_status SMALLINT   NOT NULL DEFAULT 1 CHECK (roi_60d_status IN (1, 2, 3)),
+    roi_90d_status SMALLINT   NOT NULL DEFAULT 1 CHECK (roi_90d_status IN (1, 2, 3)),
     UNIQUE (stat_date, app_id, country)
 );
 

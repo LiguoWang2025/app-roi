@@ -24,6 +24,28 @@ const ROI_COLUMNS = [
   "roi_90d",
 ] as const;
 
+const ROI_STATUS_COLUMNS = [
+  "roi_0d_status",
+  "roi_1d_status",
+  "roi_3d_status",
+  "roi_7d_status",
+  "roi_14d_status",
+  "roi_30d_status",
+  "roi_60d_status",
+  "roi_90d_status",
+] as const;
+
+const ROI_PERIOD_DAYS_BY_COLUMN: Record<(typeof ROI_COLUMNS)[number], number> = {
+  roi_0d: 0,
+  roi_1d: 1,
+  roi_3d: 3,
+  roi_7d: 7,
+  roi_14d: 14,
+  roi_30d: 30,
+  roi_60d: 60,
+  roi_90d: 90,
+};
+
 const CSV_HEADER_MAP: Record<string, string> = {
   日期: "raw_date",
   app: "app_id",
@@ -71,6 +93,8 @@ interface RawCsvRecord {
   [key: string]: string;
 }
 
+type RoiStatus = 1 | 2 | 3;
+
 function transformRow(raw: RawCsvRecord): CsvRow {
   const mapped: Record<string, string> = {};
   for (const [header, value] of Object.entries(raw)) {
@@ -93,6 +117,25 @@ function transformRow(raw: RawCsvRecord): CsvRow {
     roi_60d: parseRoiPercent(mapped.roi_60d),
     roi_90d: parseRoiPercent(mapped.roi_90d),
   });
+}
+
+function parseDateToUtc(dateStr: string): Date {
+  return new Date(`${dateStr}T00:00:00Z`);
+}
+
+function computeRoiStatus(
+  statDate: string,
+  collectionDate: string,
+  periodDays: number,
+  roiValue: number,
+): RoiStatus {
+  const stat = parseDateToUtc(statDate);
+  const cutoff = parseDateToUtc(collectionDate);
+
+  stat.setUTCDate(stat.getUTCDate() + periodDays);
+  if (stat > cutoff) return 2;
+  if (roiValue === 0) return 3;
+  return 1;
 }
 
 function readCsv(
@@ -118,7 +161,11 @@ function readCsv(
   });
 }
 
-async function insertBatch(client: PoolClient, batch: CsvRow[]): Promise<void> {
+async function insertBatch(
+  client: PoolClient,
+  batch: CsvRow[],
+  collectionDate: string,
+): Promise<void> {
   if (batch.length === 0) return;
 
   const cols = [
@@ -128,16 +175,71 @@ async function insertBatch(client: PoolClient, batch: CsvRow[]): Promise<void> {
     "bid_type",
     "installs",
     ...ROI_COLUMNS,
+    ...ROI_STATUS_COLUMNS,
   ];
   const placeholders: string[] = [];
   const values: unknown[] = [];
   let idx = 1;
 
   for (const row of batch) {
+    const roiStatuses: Record<(typeof ROI_STATUS_COLUMNS)[number], RoiStatus> = {
+      roi_0d_status: computeRoiStatus(
+        row.stat_date,
+        collectionDate,
+        ROI_PERIOD_DAYS_BY_COLUMN.roi_0d,
+        row.roi_0d,
+      ),
+      roi_1d_status: computeRoiStatus(
+        row.stat_date,
+        collectionDate,
+        ROI_PERIOD_DAYS_BY_COLUMN.roi_1d,
+        row.roi_1d,
+      ),
+      roi_3d_status: computeRoiStatus(
+        row.stat_date,
+        collectionDate,
+        ROI_PERIOD_DAYS_BY_COLUMN.roi_3d,
+        row.roi_3d,
+      ),
+      roi_7d_status: computeRoiStatus(
+        row.stat_date,
+        collectionDate,
+        ROI_PERIOD_DAYS_BY_COLUMN.roi_7d,
+        row.roi_7d,
+      ),
+      roi_14d_status: computeRoiStatus(
+        row.stat_date,
+        collectionDate,
+        ROI_PERIOD_DAYS_BY_COLUMN.roi_14d,
+        row.roi_14d,
+      ),
+      roi_30d_status: computeRoiStatus(
+        row.stat_date,
+        collectionDate,
+        ROI_PERIOD_DAYS_BY_COLUMN.roi_30d,
+        row.roi_30d,
+      ),
+      roi_60d_status: computeRoiStatus(
+        row.stat_date,
+        collectionDate,
+        ROI_PERIOD_DAYS_BY_COLUMN.roi_60d,
+        row.roi_60d,
+      ),
+      roi_90d_status: computeRoiStatus(
+        row.stat_date,
+        collectionDate,
+        ROI_PERIOD_DAYS_BY_COLUMN.roi_90d,
+        row.roi_90d,
+      ),
+    };
     const rowPlaceholders: string[] = [];
     for (const col of cols) {
       rowPlaceholders.push(`$${idx++}`);
-      values.push(row[col as keyof CsvRow]);
+      if (col in roiStatuses) {
+        values.push(roiStatuses[col as keyof typeof roiStatuses]);
+      } else {
+        values.push(row[col as keyof CsvRow]);
+      }
     }
     placeholders.push(`(${rowPlaceholders.join(", ")})`);
   }
@@ -191,7 +293,7 @@ export async function importCsv(
 
     for (let i = 0; i < rows.length; i += BATCH_SIZE) {
       const batch = rows.slice(i, i + BATCH_SIZE);
-      await insertBatch(client, batch);
+      await insertBatch(client, batch, effectiveDate);
       if ((i / BATCH_SIZE) % 5 === 0) {
         console.log(
           `[import] inserted ${Math.min(i + BATCH_SIZE, rows.length)}/${rows.length}`,
