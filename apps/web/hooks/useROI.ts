@@ -59,20 +59,34 @@ export function useROI({
       params.append("roi_period", filter.roiPeriod);
       params.append("ma_days", "7");
 
-      const response = await fetch(`/api/roi?${params.toString()}`);
+      const url = `/api/roi?${params.toString()}`;
+      console.log("Fetching ROI data from:", url);
+
+      const response = await fetch(url);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const result: RoiResponse = await response.json();
+      console.log("Received ROI data:", result.data.length, "items");
       setData(result.data);
     } catch (err) {
+      console.error("ROI fetch error:", err);
       setError(err instanceof Error ? err : new Error("An error occurred"));
     } finally {
       setIsLoading(false);
     }
-  }, [enabled, filter]);
+  }, [
+    enabled,
+    filter.appIds,
+    filter.countries,
+    filter.bidType,
+    filter.channel,
+    filter.startDate,
+    filter.endDate,
+    filter.roiPeriod,
+  ]);
 
   useEffect(() => {
     fetchData();
